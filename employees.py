@@ -24,17 +24,18 @@ def create_connection():
         st.error(f"Error al conectar a la base de datos: {e}")
         return None
 
-def insert_employee(name, identification_number):
+def insert_employees_bulk(employees_data):
     connection = create_connection()
     if connection:
         cursor = connection.cursor()
-        query = """INSERT INTO employees (name, identification_number) VALUES (%s, %s)"""
+        query = """INSERT INTO employees (name, position, salary)
+                   VALUES (%s, %s, %s)"""
         try:
-            cursor.execute(query, (name, identification_number))
+            cursor.executemany(query, employees_data)
             connection.commit()
-            st.success("¡Empleado insertado exitosamente!")
+            st.success("¡Empleados insertados exitosamente!")
         except Error as e:
-            st.error(f"Error al insertar el empleado: {e}")
+            st.error(f"Error al insertar los empleados: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -60,15 +61,19 @@ def employees_interface():
     option = st.sidebar.selectbox("Selecciona una operación", ["Insertar empleado", "Consultar empleados"])
 
     if option == "Insertar empleado":
-        st.header("Insertar un empleado")
+        st.header("Insertar empleado")
+        employee_data = []
+        
         name = st.text_input("Nombre")
-        identification_number = st.text_input("Número de Identificación")
+        position = st.text_input("Posición")
+        salary = st.number_input("Salario", min_value=0.0, format="%.2f")
         
         if st.button("Insertar empleado"):
-            if name and identification_number:
-                insert_employee(name, identification_number)
+            if name and position:
+                employee_data.append((name, position, salary))
+                insert_employees_bulk(employee_data)
             else:
-                st.warning("Por favor, completa los campos requeridos.")
+                st.warning("Por favor, completa los datos del empleado.")
     
     elif option == "Consultar empleados":
         st.header("Consultar empleados")
