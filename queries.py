@@ -28,15 +28,15 @@ def queries_interface():
         consulta_ventas_vehiculos()
     elif query_option == "Consulta 3: Promedio de ventas por año":
         consulta_promedio_ventas()
-    elif query_option == "Consulta 4: Reparaciones recientes por vehículo (LEFT JOIN)":
+    elif query_option == "Consulta 4: Reparaciones recientes por vehículo":
         consulta_reparaciones_vehiculos()
     elif query_option == "Consulta 5: Precio mínimo de vehículos":
         consulta_precio_minimo_vehiculos()
     elif query_option == "Consulta 6: Mínimo y máximo precio de vehículos por marca":
         consulta_min_max_precio_vehiculos()
-    elif query_option == "Consulta 7: Ventas y pagos de cada cliente (INNER JOIN)":
+    elif query_option == "Consulta 7: Ventas y pagos de cada cliente":
         consulta_ventas_pagos_cliente()
-    elif query_option == "Consulta 8: Vehículos sin reparaciones (RIGHT JOIN)":
+    elif query_option == "Consulta 8: Vehículos sin reparaciones":
         consulta_vehiculos_sin_reparaciones()
     elif query_option == "Consulta 9: Total de pagos recibidos por año":
         consulta_pagos_por_anio()
@@ -48,7 +48,7 @@ def queries_interface():
         consulta_reparaciones_por_empleado()
     elif query_option == "Consulta 13: Vehículos y total gastado en reparaciones":
         consulta_total_reparaciones_vehiculo()
-    elif query_option == "Consulta 14: Clientes que han realizado pagos (INNER JOIN)":
+    elif query_option == "Consulta 14: Clientes que han realizado pagos":
         consulta_clientes_con_pagos()
     elif query_option == "Consulta 15: Promedio de capacidad de motor por marca":
         consulta_promedio_capacidad_motor()
