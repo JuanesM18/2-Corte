@@ -3,6 +3,7 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
 load_dotenv()
 
@@ -40,6 +41,23 @@ def insert_repairs_bulk(repairs_data):
             cursor.close()
             connection.close()
 
+def insert_repairs_from_dataframe(df):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        query = """INSERT INTO repairs (vehicle_id, repair_date, description, cost, employee_id)
+                   VALUES (%s, %s, %s, %s, %s)"""
+        try:
+            for _, row in df.iterrows():
+                cursor.execute(query, (row['vehicle_id'], row['repair_date'], row['description'], row['cost'], row['employee_id']))
+            connection.commit()
+            st.success("¡Reparaciones insertadas exitosamente desde el archivo!")
+        except Error as e:
+            st.error(f"Error al insertar reparaciones desde el archivo: {e}")
+        finally:
+            cursor.close()
+            connection.close()
+
 def get_repairs():
     connection = create_connection()
     if connection:
@@ -58,7 +76,7 @@ def get_repairs():
 
 def repairs_interface():
     st.title("Gestión de Reparaciones")
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar reparaciones en bulk", "Consultar reparaciones"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar reparaciones en bulk", "Cargar reparaciones desde Excel", "Consultar reparaciones"])
 
     if option == "Insertar reparaciones en bulk":
         st.header("Insertar múltiples reparaciones")
@@ -71,7 +89,7 @@ def repairs_interface():
             vehicle_id = st.number_input(f"ID del vehículo para la reparación {i+1}", min_value=1, key=f"vehicle_id_{i}")
             repair_date = st.date_input(f"Fecha de reparación {i+1}", key=f"repair_date_{i}")
             description = st.text_area(f"Descripción de la reparación {i+1}", key=f"description_{i}")
-            cost = st.number_input(f"Costo de la reparación {i+1}", key=f"cost_{i}")
+            cost = st.number_input(f"Costo de la reparación {i+1}", min_value=0.0, format="%.2f", key=f"cost_{i}")
             employee_id = st.number_input(f"ID del empleado que realizó la reparación {i+1}", min_value=1, key=f"employee_id_{i}")
             
             if vehicle_id and repair_date and description and cost and employee_id:
@@ -83,6 +101,18 @@ def repairs_interface():
             else:
                 st.warning("Por favor, ingresa todos los datos requeridos para las reparaciones.")
     
+    elif option == "Cargar reparaciones desde Excel":
+        st.header("Cargar Reparaciones desde un archivo Excel")
+        uploaded_file = st.file_uploader("Selecciona un archivo Excel", type=["xlsx"])
+        
+        if uploaded_file is not None:
+            df = pd.read_excel(uploaded_file)
+            required_columns = ['vehicle_id', 'repair_date', 'description', 'cost', 'employee_id']
+            if all(column in df.columns for column in required_columns):
+                insert_repairs_from_dataframe(df)
+            else:
+                st.error("El archivo debe contener las columnas: 'vehicle_id', 'repair_date', 'description', 'cost', 'employee_id'.")
+
     elif option == "Consultar reparaciones":
         st.header("Consultar reparaciones")
         repairs = get_repairs()

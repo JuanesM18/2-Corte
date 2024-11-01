@@ -3,6 +3,7 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
 load_dotenv()
 
@@ -19,23 +20,42 @@ def create_connection():
             password=DB_PASSWORD,
             database=DB_NAME
         )
+        if connection.is_connected():
+            st.write("Conexión establecida con la base de datos.")
         return connection
     except Error as e:
         st.error(f"Error al conectar a la base de datos: {e}")
         return None
 
-def insert_employees_bulk(employees_data):
+def insert_employee(name, position, salary):
     connection = create_connection()
     if connection:
         cursor = connection.cursor()
         query = """INSERT INTO employees (name, position, salary)
                    VALUES (%s, %s, %s)"""
         try:
-            cursor.executemany(query, employees_data)
+            cursor.execute(query, (name, position, salary))
             connection.commit()
-            st.success("¡Empleados insertados exitosamente!")
+            st.success("¡Empleado insertado exitosamente!")
         except Error as e:
-            st.error(f"Error al insertar los empleados: {e}")
+            st.error(f"Error al insertar el empleado: {e}")
+        finally:
+            cursor.close()
+            connection.close()
+
+def insert_employees_from_dataframe(df):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        query = """INSERT INTO employees (name, position, salary)
+                   VALUES (%s, %s, %s)"""
+        try:
+            for _, row in df.iterrows():
+                cursor.execute(query, (row['name'], row['position'], row['salary']))
+            connection.commit()
+            st.success("¡Empleados insertados exitosamente desde el archivo!")
+        except Error as e:
+            st.error(f"Error al insertar empleados desde el archivo: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -58,23 +78,32 @@ def get_employees():
 
 def employees_interface():
     st.title("Gestión de Empleados")
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar empleado", "Consultar empleados"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar empleado", "Cargar empleados desde Excel", "Consultar empleados"])
 
     if option == "Insertar empleado":
-        st.header("Insertar empleado")
-        employee_data = []
-        
+        st.header("Insertar un empleado")
         name = st.text_input("Nombre")
         position = st.text_input("Posición")
         salary = st.number_input("Salario", min_value=0.0, format="%.2f")
         
         if st.button("Insertar empleado"):
             if name and position:
-                employee_data.append((name, position, salary))
-                insert_employees_bulk(employee_data)
+                insert_employee(name, position, salary)
             else:
-                st.warning("Por favor, completa los datos del empleado.")
-    
+                st.warning("Por favor, completa los campos requeridos.")
+
+    elif option == "Cargar empleados desde Excel":
+        st.header("Cargar empleados desde un archivo Excel")
+        uploaded_file = st.file_uploader("Selecciona un archivo Excel", type=["xlsx"])
+        
+        if uploaded_file is not None:
+            df = pd.read_excel(uploaded_file)
+            required_columns = ['name', 'position', 'salary']
+            if all(column in df.columns for column in required_columns):
+                insert_employees_from_dataframe(df)
+            else:
+                st.error("El archivo debe contener las columnas: 'name', 'position', 'salary'.")
+
     elif option == "Consultar empleados":
         st.header("Consultar empleados")
         employees = get_employees()

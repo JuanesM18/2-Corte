@@ -1,11 +1,10 @@
-# vehicles.py
 import streamlit as st
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
-# Cargar las variables de entorno y establecer conexión a la base de datos
 load_dotenv()
 
 DB_HOST = os.getenv("DB_HOST")
@@ -13,7 +12,6 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 
-# Función para crear la conexión a MySQL
 def create_connection():
     try:
         connection = mysql.connector.connect(
@@ -27,7 +25,6 @@ def create_connection():
         st.error(f"Error al conectar a la base de datos: {e}")
         return None
 
-# Función para insertar múltiples vehículos en bulk
 def insert_vehicles_bulk(vehicles_data):
     connection = create_connection()
     if connection:
@@ -44,7 +41,23 @@ def insert_vehicles_bulk(vehicles_data):
             cursor.close()
             connection.close()
 
-# Función para consultar todos los vehículos
+def insert_vehicles_from_dataframe(df):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        query = """INSERT INTO vehicles (reference, year, engine_capacity, brand, price)
+                   VALUES (%s, %s, %s, %s, %s)"""
+        try:
+            for _, row in df.iterrows():
+                cursor.execute(query, (row['reference'], row['year'], row['engine_capacity'], row['brand'], row['price']))
+            connection.commit()
+            st.success("¡Vehículos insertados exitosamente desde el archivo!")
+        except Error as e:
+            st.error(f"Error al insertar vehículos desde el archivo: {e}")
+        finally:
+            cursor.close()
+            connection.close()
+
 def get_vehicles():
     connection = create_connection()
     if connection:
@@ -61,10 +74,9 @@ def get_vehicles():
             cursor.close()
             connection.close()
 
-# Función de interfaz específica para la tabla 'vehicles'
 def vehicles_interface():
     st.title("Gestión de Vehículos")
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar vehículos en bulk", "Consultar vehículos"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar vehículos en bulk", "Cargar vehículos desde Excel", "Consultar vehículos"])
 
     if option == "Insertar vehículos en bulk":
         st.header("Insertar múltiples vehículos")
@@ -88,6 +100,18 @@ def vehicles_interface():
                 insert_vehicles_bulk(vehicles_data)
             else:
                 st.warning("Por favor, ingresa todos los datos requeridos para los vehículos.")
+    
+    elif option == "Cargar vehículos desde Excel":
+        st.header("Cargar vehículos desde un archivo Excel")
+        uploaded_file = st.file_uploader("Selecciona un archivo Excel", type=["xlsx"])
+        
+        if uploaded_file is not None:
+            df = pd.read_excel(uploaded_file)
+            required_columns = ['reference', 'year', 'engine_capacity', 'brand', 'price']
+            if all(column in df.columns for column in required_columns):
+                insert_vehicles_from_dataframe(df)
+            else:
+                st.error("El archivo debe contener las columnas: 'reference', 'year', 'engine_capacity', 'brand', 'price'.")
     
     elif option == "Consultar vehículos":
         st.header("Consultar vehículos")
