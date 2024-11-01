@@ -4,6 +4,7 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 from sales import get_sales
 import os
+import pandas as pd
 
 load_dotenv()
 
@@ -32,11 +33,28 @@ def insert_payments_bulk(payments):
         query = """INSERT INTO payments (sale_id, payment_date, amount, payment_method)
                    VALUES (%s, %s, %s, %s)"""
         try:
-            cursor.executemany(query, payments)  # Insertar en bulk
+            cursor.executemany(query, payments)
             connection.commit()
             st.success("¡Pagos insertados exitosamente!")
         except Error as e:
             st.error(f"Error al insertar los pagos: {e}")
+        finally:
+            cursor.close()
+            connection.close()
+
+def insert_payments_from_dataframe(df):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        query = """INSERT INTO payments (sale_id, payment_date, amount, payment_method)
+                   VALUES (%s, %s, %s, %s)"""
+        try:
+            for _, row in df.iterrows():
+                cursor.execute(query, (row['sale_id'], row['payment_date'], row['amount'], row['payment_method']))
+            connection.commit()
+            st.success("¡Pagos insertados exitosamente desde el archivo!")
+        except Error as e:
+            st.error(f"Error al insertar pagos desde el archivo: {e}")
         finally:
             cursor.close()
             connection.close()
@@ -60,7 +78,7 @@ def get_payments():
 def payments_interface():
     st.title("Gestión de Pagos")
 
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar pagos", "Consultar pagos"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar pagos", "Cargar pagos desde Excel", "Consultar pagos"])
 
     if option == "Insertar pagos":
         st.header("Insertar Pagos")
@@ -79,6 +97,18 @@ def payments_interface():
                 insert_payments_bulk([(sale_id, payment_date, amount, payment_method)])
             else:
                 st.warning("Por favor, completa todos los campos requeridos.")
+
+    elif option == "Cargar pagos desde Excel":
+        st.header("Cargar Pagos desde un archivo Excel")
+        uploaded_file = st.file_uploader("Selecciona un archivo Excel", type=["xlsx"])
+        
+        if uploaded_file is not None:
+            df = pd.read_excel(uploaded_file)
+            required_columns = ['sale_id', 'payment_date', 'amount', 'payment_method']
+            if all(column in df.columns for column in required_columns):
+                insert_payments_from_dataframe(df)
+            else:
+                st.error("El archivo debe contener las columnas: 'sale_id', 'payment_date', 'amount', 'payment_method'.")
 
     elif option == "Consultar pagos":
         st.header("Consultar Pagos")
