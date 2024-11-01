@@ -1,11 +1,9 @@
-# repairs.py
 import streamlit as st
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 
-# Cargar las variables de entorno y establecer conexión a la base de datos
 load_dotenv()
 
 DB_HOST = os.getenv("DB_HOST")
@@ -13,7 +11,6 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 
-# Función para crear la conexión a MySQL
 def create_connection():
     try:
         connection = mysql.connector.connect(
@@ -27,7 +24,6 @@ def create_connection():
         st.error(f"Error al conectar a la base de datos: {e}")
         return None
 
-# Función para insertar múltiples reparaciones en bulk
 def insert_repairs_bulk(repairs_data):
     connection = create_connection()
     if connection:
@@ -44,7 +40,6 @@ def insert_repairs_bulk(repairs_data):
             cursor.close()
             connection.close()
 
-# Función para consultar todas las reparaciones
 def get_repairs():
     connection = create_connection()
     if connection:
@@ -61,7 +56,6 @@ def get_repairs():
             cursor.close()
             connection.close()
 
-# Función de interfaz específica para la tabla 'repairs'
 def repairs_interface():
     st.title("Gestión de Reparaciones")
     option = st.sidebar.selectbox("Selecciona una operación", ["Insertar reparaciones en bulk", "Consultar reparaciones"])
