@@ -76,9 +76,9 @@ def get_vehicles():
 
 def vehicles_interface():
     st.title("Gestión de Vehículos")
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar vehículos en bulk", "Cargar vehículos desde Excel", "Consultar vehículos"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar vehículos", "Cargar vehículos desde Excel", "Consultar vehículos"])
 
-    if option == "Insertar vehículos en bulk":
+    if option == "Insertar vehículos":
         st.header("Insertar múltiples vehículos")
         
         num_vehicles = st.number_input("Número de vehículos a insertar", min_value=1, step=1)

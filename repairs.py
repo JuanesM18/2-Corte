@@ -76,9 +76,9 @@ def get_repairs():
 
 def repairs_interface():
     st.title("Gestión de Reparaciones")
-    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar reparaciones en bulk", "Cargar reparaciones desde Excel", "Consultar reparaciones"])
+    option = st.sidebar.selectbox("Selecciona una operación", ["Insertar reparaciones", "Cargar reparaciones desde Excel", "Consultar reparaciones"])
 
-    if option == "Insertar reparaciones en bulk":
+    if option == "Insertar reparaciones":
         st.header("Insertar múltiples reparaciones")
         
         num_repairs = st.number_input("Número de reparaciones a insertar", min_value=1, step=1)
